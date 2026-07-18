@@ -7,7 +7,6 @@ on:
 
 jobs:
   process-job:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -20,5 +19,14 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Create Google Credentials
+        run: |
+          echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT }}' > service-account.json
+
       - name: Run Workflow Engine
-        run: python scripts/process_job.py
+        run: |
+          python scripts/process_job.py

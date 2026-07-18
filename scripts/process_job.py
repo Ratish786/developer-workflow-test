@@ -1,8 +1,18 @@
 import json
 from pathlib import Path
 
+import gspread
+from google.oauth2.service_account import Credentials
+
+
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+
 
 def get_latest_job():
+
     jobs = sorted(Path("jobs").glob("*.json"))
 
     if not jobs:
@@ -12,16 +22,19 @@ def get_latest_job():
     return jobs[-1]
 
 
-def process_task(index, task):
+def connect_sheet():
 
-    print("=" * 60)
-    print(f"Processing Task {index}")
-    print("=" * 60)
+    credentials = Credentials.from_service_account_file(
+        "service-account.json",
+        scopes=SCOPES
+    )
 
-    for key, value in task.items():
-        print(f"{key:<20}: {value}")
+    client = gspread.authorize(credentials)
 
-    print("\nTask processed successfully.\n")
+    # We'll replace this with your real Sheet ID
+    sheet = client.open_by_key("1AU-8yR3yicF-JrAXwh4BaWUGaAQazrNzEEE3Is-HfqI").sheet1
+
+    return sheet
 
 
 def main():
@@ -31,25 +44,26 @@ def main():
     if job is None:
         return
 
-    print("=" * 60)
-    print("DEVELOPER WORKFLOW ENGINE")
-    print("=" * 60)
-
-    print(f"\nJob File : {job.name}")
+    print(f"Processing {job.name}")
 
     with open(job, "r", encoding="utf-8") as file:
         data = json.load(file)
 
-    print(f"Status     : {data['status']}")
-    print(f"Created At : {data['created_at']}")
-    print(f"Total Tasks: {len(data['tasks'])}\n")
+    sheet = connect_sheet()
 
-    for index, task in enumerate(data["tasks"], start=1):
-        process_task(index, task)
+    for task in data["tasks"]:
 
-    print("=" * 60)
-    print("WORKFLOW FINISHED SUCCESSFULLY")
-    print("=" * 60)
+        row = [
+            task.get("Module"),
+            task.get("Task / Bug"),
+            task.get("Description")
+        ]
+
+        sheet.append_row(row)
+
+        print(f"Inserted : {task.get('Task / Bug')}")
+
+    print("Workflow Finished Successfully")
 
 
 if __name__ == "__main__":
