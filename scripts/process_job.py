@@ -3,6 +3,7 @@ from pathlib import Path
 
 import gspread
 from google.oauth2.service_account import Credentials
+from tracker.sheet_mapper import SheetMapper
 
 
 SCOPES = [
@@ -50,16 +51,23 @@ def main():
         data = json.load(file)
 
     sheet = connect_sheet()
+    mapper = SheetMapper()
 
     for task in data["tasks"]:
 
-        row = [
-            task.get("Module"),
-            task.get("Task / Bug"),
-            task.get("Description")
-        ]
+        row = mapper.build_row(task)
 
         sheet.append_row(row)
+
+        print(f"Inserted : {task.get('Task / Bug', '')}")
+
+        # row = [
+        #     task.get("Module"),
+        #     task.get("Task / Bug"),
+        #     task.get("Description")
+        # ]
+
+        # sheet.append_row(row)
 
         print(f"Inserted : {task.get('Task / Bug')}")
 
